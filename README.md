@@ -17,31 +17,39 @@ Run the image setting the following environment variables:
  
 # Example (standalone)
 
-	docker run --link=compose_project_db_1:database \
+	docker run --link=database \
 		-e MYSQL_HOST=database \
 		-e MYSQL_USER=user \
 		-e MYSQL_PASSWORD=password \
 		-e MYSQL_DATABASE=db \
 		-v $(pwd)/migrations:/docker-entrypoint-migrations.d/ \
-		mathewhall/db_migrate 
+		mathewhall/mysql_migration 
 
 # Example (compose)
 
 	database:
-	    image: mysql
-	    expose:
-	        - 3306
-	    ports:
-	        - "3306:3306"
-	    volumes:
-	        - /var/lib/mysql
-			- ./schema:/docker-entrypoint-initdb.d
-    
+	  image: mysql
+	  expose:
+	    - 3306
+	  volumes:
+	    - ./schema:/docker-entrypoint-initdb.d
+	    - /var/lib/mysql
+	  environment:
+	    MYSQL_DATABASE: database
+	    MYSQL_USER: user
+	    MYSQL_PASSWORD: password
+	    MYSQL_ROOT_PASSWORD: root_password
+  
 	migration:
-	  image: mysql_migration
+	  image: mathewhall/mysql_migration
 	  volumes:
 	    - ./migrations:/docker-entrypoint-migrations.d
 	  links:
 	    - database
+	  environment:
+	    MYSQL_HOST: database
+	    MYSQL_DATABASE: database
+	    MYSQL_USER: user
+	    MYSQL_PASSWORD: password
 
-Each time your containers are started via compose, the migrations will run.
+Each time your containers are started via compose, the migrations will run. You can avoid repeating the environment variables using the `env_file` directive in your compose file to define the MySQL credentials in one place instead of two.
